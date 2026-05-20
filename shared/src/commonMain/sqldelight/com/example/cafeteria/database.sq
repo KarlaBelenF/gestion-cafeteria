@@ -38,6 +38,7 @@ CREATE TABLE DetallesVenta (
     stock_id INTEGER NOT NULL,
     cantidad INTEGER NOT NULL,
     total REAL NOT NULL,
+    fecha TEXT NOT NULL DEFAULT CURRENT_DATE,
     FOREIGN KEY (cliente_id) REFERENCES Cliente(id),
     FOREIGN KEY (vendedor_id) REFERENCES Vendedor(id),
     FOREIGN KEY (stock_id) REFERENCES Stock(id)
@@ -55,9 +56,18 @@ DELETE FROM Stock WHERE id = ?;
 selectAllStock:
 SELECT * FROM Stock;
 
+selectStockById:
+SELECT * FROM Stock WHERE id = ?;
+
 updateStockQuantity:
 UPDATE Stock SET cantidad = cantidad - ? WHERE id = ?;
 
 insertDetalleVenta:
 INSERT INTO DetallesVenta (cliente_id, vendedor_id, stock_id, cantidad, total)
 VALUES (?, ?, ?, ?, ?);
+
+selectAllVentas:
+SELECT * FROM DetallesVenta;
+
+selectVendedorLogin:
+SELECT * FROM Vendedor WHERE usuario = ? AND contrasena = ?;
