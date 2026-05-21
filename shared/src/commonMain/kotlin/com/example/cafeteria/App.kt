@@ -36,7 +36,7 @@ fun App() {
 
         // 1 = Pantalla de Productos (Inventario)
         // 2 = Pantalla de Ventas (Punto de Venta)
-        val seleccion = 2
+        val seleccion = 1
 
         // Determinamos qué objeto Screen instanciar según tu selección
         val pantallaInicial = when (seleccion) {

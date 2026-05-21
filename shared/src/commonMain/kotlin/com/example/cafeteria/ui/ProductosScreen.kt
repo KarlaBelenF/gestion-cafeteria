@@ -1,13 +1,18 @@
 package com.example.cafeteria.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -23,21 +28,32 @@ class ProductosScreen(
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        // LocalNavigator provee acceso al historial de pantallas actual
         val navigator = LocalNavigator.currentOrThrow
         val state by viewModel.state.collectAsState()
+
+        // Estados para controlar los diálogos emergentes
         var mostrarDialogoAgregar by remember { mutableStateOf(false) }
+        var mostrarGrafica by remember { mutableStateOf(false) }
 
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text("Inventario") },
                     navigationIcon = {
-                        TextButton(onClick = { navigator.pop() }) { // Quita esta pantalla y vuelve a la anterior (ej. Login)
+                        TextButton(onClick = { navigator.pop() }) {
                             Text("< Atrás", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     },
                     actions = {
+                        // NUEVO BOTÓN PARA MOSTRAR LA GRÁFICA
+                        Button(
+                            onClick = { mostrarGrafica = true },
+                            modifier = Modifier.padding(end = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text("Ver Gráfica")
+                        }
+
                         Button(
                             onClick = { viewModel.exportarAExcel() },
                             modifier = Modifier.padding(end = 8.dp)
@@ -91,6 +107,7 @@ class ProductosScreen(
             }
         }
 
+        // Diálogo para agregar producto
         if (mostrarDialogoAgregar) {
             DialogoAgregarProducto(
                 onDismiss = { mostrarDialogoAgregar = false },
@@ -100,7 +117,100 @@ class ProductosScreen(
                 }
             )
         }
+
+        // DIÁLOGO EMERGENTE QUE CONTIENE LA GRÁFICA DE BARRAS
+        if (mostrarGrafica) {
+            DialogoGraficaProductos(
+                productos = state.productos,
+                onDismiss = { mostrarGrafica = false }
+            )
+        }
     }
+}
+
+// COMPOSABLE DE LA GRÁFICA DE BARRAS NATIVA
+@Composable
+fun DialogoGraficaProductos(
+    productos: List<Producto>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Stock por Producto", fontWeight = FontWeight.Bold) },
+        text = {
+            if (productos.isEmpty()) {
+                Text("No hay productos registrados en el inventario para graficar.")
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                ) {
+                    // Buscamos el stock máximo para que sirva como el 100% de la altura de la gráfica
+                    val maxStock = productos.maxOfOrNull { it.stock }?.coerceAtLeast(1L) ?: 1L
+                    val scrollState = rememberScrollState()
+
+                    // Contenedor horizontal con Scroll para que entren infinitos productos sin romperse
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp)
+                            .horizontalScroll(scrollState)
+                            .padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        productos.forEach { producto ->
+                            // Calculamos la altura de la barra de forma proporcional (máximo 180.dp)
+                            val porcentajeAltura = producto.stock.toFloat() / maxStock.toFloat()
+                            val alturaBarra = (porcentajeAltura * 180).dp.coerceAtLeast(4.dp)
+
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.width(65.dp)
+                            ) {
+                                // Texto indicador de la cantidad encima de la barra
+                                Text(
+                                    text = "${producto.stock}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                // El cuerpo físico de la barra
+                                Box(
+                                    modifier = Modifier
+                                        .width(32.dp)
+                                        .height(alturaBarra)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
+                                        )
+                                )
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Etiqueta inferior con el nombre del producto
+                                Text(
+                                    text = producto.nombre,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
 }
 
 @Composable
