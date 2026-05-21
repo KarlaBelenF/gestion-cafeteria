@@ -1,0 +1,76 @@
+CREATE TABLE Proveedor (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    usuario TEXT NOT NULL UNIQUE,
+    contrasena TEXT NOT NULL
+);
+
+CREATE TABLE Vendedor (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    usuario TEXT NOT NULL UNIQUE,
+    contrasena TEXT NOT NULL
+);
+
+CREATE TABLE Cliente (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    usuario TEXT NOT NULL UNIQUE,
+    contrasena TEXT NOT NULL
+);
+
+CREATE TABLE Stock (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    producto TEXT NOT NULL,
+    precio REAL NOT NULL,
+    cantidad INTEGER NOT NULL,
+    descripcion TEXT,
+    proveedor_id INTEGER NOT NULL,
+    vendedor_id INTEGER NOT NULL,
+    FOREIGN KEY (proveedor_id) REFERENCES Proveedor(id),
+    FOREIGN KEY (vendedor_id) REFERENCES Vendedor(id)
+);
+
+CREATE TABLE DetallesVenta (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cliente_id INTEGER NOT NULL,
+    vendedor_id INTEGER NOT NULL,
+    stock_id INTEGER NOT NULL,
+    cantidad INTEGER NOT NULL,
+    total REAL NOT NULL,
+    fecha TEXT NOT NULL DEFAULT CURRENT_DATE,
+    FOREIGN KEY (cliente_id) REFERENCES Cliente(id),
+    FOREIGN KEY (vendedor_id) REFERENCES Vendedor(id),
+    FOREIGN KEY (stock_id) REFERENCES Stock(id)
+);
+
+-- Consultas
+
+insertProducto:
+INSERT INTO Stock (producto, precio, cantidad, descripcion, proveedor_id, vendedor_id)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteProducto:
+DELETE FROM Stock WHERE id = ?;
+
+selectAllStock:
+SELECT * FROM Stock;
+
+selectStockById:
+SELECT * FROM Stock WHERE id = ?;
+
+updateStockQuantity:
+UPDATE Stock SET cantidad = cantidad - ? WHERE id = ?;
+
+insertDetalleVenta:
+INSERT INTO DetallesVenta (cliente_id, vendedor_id, stock_id, cantidad, total)
+VALUES (?, ?, ?, ?, ?);
+
+selectAllVentas:
+SELECT * FROM DetallesVenta;
+
+selectVendedorLogin:
+SELECT * FROM Vendedor WHERE usuario = ? AND contrasena = ?;
+
+actualizarCantidadStock:
+UPDATE Stock SET cantidad = ? WHERE id = ?;
