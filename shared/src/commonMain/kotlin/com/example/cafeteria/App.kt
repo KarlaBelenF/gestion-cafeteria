@@ -51,27 +51,3 @@ fun App() {
         }
     }
 }
-
-
-//Si quieres que sea la pantalla inicial de la app
-
-        // 1. Obtenemos el ViewModel desde las dependencias globales
-        //val productosViewModel = remember { AppModule.AppModule.proveerProductosViewModel() }
-
-        // 2. Inicializamos Voyager indicando cuál es la primera pantalla
-        //Navigator(screen = ProductosScreen(viewModel = productosViewModel))
-//Si la vas a llamar desde otra pantalla
-// 1. Obtienes el navegador de Voyager que está controlando la app
-//val navigator = LocalNavigator.currentOrThrow
-
-// 2. Obtienes el ViewModel que necesita la pantalla de productos
-//val productosViewModel = remember { AppModule.AppModule.proveerProductosViewModel() }
-
-//Button(
-//onClick = {
-    // 3. Haces el "push" pasando la instancia de la pantalla con su ViewModel
-    //navigator.push(ProductosScreen(productosViewModel))
-//}
-//) {
-   // Text("Ingresar al Inventario")
-//}
