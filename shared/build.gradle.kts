@@ -25,6 +25,7 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
+            implementation("app.cash.sqldelight:android-driver:2.0.2")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -35,6 +36,12 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            implementation(libs.voyager.navigator)
+            implementation(libs.voyager.transitions)
+        }
+        jvmMain.dependencies {
+            implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

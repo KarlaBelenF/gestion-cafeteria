@@ -11,6 +11,8 @@ import com.example.cafeteria.Domain.Repository.VentasRepository
 import com.example.cafeteria.Puente.auth.LoginViewModel // Agregamos tu ViewModel
 import com.example.cafeteria.Puente.Productos.ProductosViewModel
 import com.example.cafeteria.Puente.ventas.VentasViewModel
+import com.example.cafeteria.DatabaseDriverFactory
+
 
 object AppModule {
 
@@ -19,6 +21,18 @@ object AppModule {
     val ventasRepository: VentasRepository by lazy {
         VentasRepositoryImpl(database)
     }
+        lateinit var database: database
+
+        fun inicializar(factory: DatabaseDriverFactory) {
+            if (!this::database.isInitialized) {
+                database = database(factory.createDriver())
+            }
+        }
+
+        // ¡Solo una vez!
+        val ventasRepository: VentasRepository by lazy {
+            VentasRepositoryImpl(database)
+        }
 
     val productosRepository: ProductosRepository by lazy {
         ProductosRepositoryImpl(database)
@@ -35,6 +49,17 @@ object AppModule {
     fun proveerVentasViewModel(): VentasViewModel {
         return VentasViewModel(ventasRepository)
     }
+        val productosRepository: ProductosRepository by lazy {
+            ProductosRepositoryImpl(database)
+        }
+
+        val exportadorRepository: ExportadorRepository by lazy {
+            ExportadorRepositoryImpl()
+        }
+
+        fun proveerVentasViewModel(): VentasViewModel {
+            return VentasViewModel(ventasRepository)
+        }
 
     fun proveerProductosViewModel(): ProductosViewModel {
         return ProductosViewModel(productosRepository, exportadorRepository)
@@ -42,5 +67,8 @@ object AppModule {
 
     fun proveerLoginViewModel(): LoginViewModel {
         return LoginViewModel(authRepository)
+        fun proveerProductosViewModel(): ProductosViewModel {
+            return ProductosViewModel(productosRepository, exportadorRepository)
+        }
     }
 }

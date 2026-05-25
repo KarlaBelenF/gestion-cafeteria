@@ -71,3 +71,6 @@ SELECT * FROM DetallesVenta;
 
 selectVendedorLogin:
 SELECT * FROM Vendedor WHERE usuario = ? AND contrasena = ?;
+
+actualizarCantidadStock:
+UPDATE Stock SET cantidad = ? WHERE id = ?;

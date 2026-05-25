@@ -9,4 +9,6 @@ interface ProductosRepository {
     fun buscarProductoPorNombre(query: String): Flow<Resource<List<Producto>>>
     suspend fun insertarProducto(producto: Producto, proveedorId: Long, vendedorId: Long): Resource<Unit>
     suspend fun eliminarProducto(id: Long): Resource<Unit>
+
+    suspend fun actualizarStock(id: Long, nuevaCantidad: Long): Resource<Unit>
 }

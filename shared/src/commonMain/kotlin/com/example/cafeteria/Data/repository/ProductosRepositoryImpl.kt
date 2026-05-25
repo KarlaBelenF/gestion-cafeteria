@@ -68,4 +68,12 @@ class ProductosRepositoryImpl(
             Resource.Error("Error al eliminar del inventario", e)
         }
     }
+    override suspend fun actualizarStock(id: Long, nuevaCantidad: Long): Resource<Unit> {
+        return try {
+            queries.actualizarCantidadStock(cantidad = nuevaCantidad, id = id)
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error("Error al actualizar el stock", e)
+        }
+    }
 }
