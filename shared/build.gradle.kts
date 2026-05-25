@@ -7,18 +7,12 @@ plugins {
 }
 
 kotlin {
-    // 🎯 SOLUCIÓN: Agregamos el toolchain global aquí arriba.
-    // Esto unifica Java 17 para Desktop y Android de un solo golpe.
-    jvmToolchain(17)
-
     jvm()
 
     androidLibrary {
         namespace = "com.example.cafeteria.shared"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
-
-        // ❌ Aquí estaba el bloque compilerOptions. Ya lo eliminamos.
 
         androidResources {
             enable = true
@@ -44,6 +38,9 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+        }
+        jvmMain.dependencies {
+            implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
         }
         jvmTest.dependencies {
             implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
