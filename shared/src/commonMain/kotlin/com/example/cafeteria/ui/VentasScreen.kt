@@ -17,9 +17,11 @@ import com.example.cafeteria.Domain.model.Producto
 import com.example.cafeteria.Puente.Productos.ProductosViewModel
 import com.example.cafeteria.Puente.ventas.VentasViewModel
 
+
 class VentasScreen(
     private val productosViewModel: ProductosViewModel,
-    private val ventasViewModel: VentasViewModel
+    private val ventasViewModel: VentasViewModel,
+    private val clienteNombre: String
 ) : Screen {
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -29,15 +31,13 @@ class VentasScreen(
         val productosState by productosViewModel.state.collectAsState()
         val ventasState by ventasViewModel.state.collectAsState()
 
-        var productoAAgregar by remember { mutableStateOf<Producto?>(null) }
-
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Punto de Venta") },
-                    navigationIcon = {
-                        TextButton(onClick = { navigator.pop() }) {
-                            Text("< Atrás", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    title = { Text("Tienda - Hola $clienteNombre") },
+                    actions = {
+                        Button(onClick = { navigator.push(HistorialScreen(ventasViewModel, clienteNombre)) }) {
+                            Text("Ver Mis Pedidos")
                         }
                     }
                 )
@@ -45,28 +45,23 @@ class VentasScreen(
             bottomBar = {
                 BottomAppBar {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = "Total Carrito: $${ventasState.totalCarrito}",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = MaterialTheme.colorScheme.primary
+                            fontWeight = FontWeight.Bold, fontSize = 20.sp, color = MaterialTheme.colorScheme.primary
                         )
 
                         Button(
                             onClick = {
-                                // Aquí conectará la otra pantalla.
-                                // Ejemplo: navigator.push(CobroScreen(ventasViewModel))
-                                println("Botón Listo presionado. Esperando pantalla del companiero...")
+                                ventasViewModel.enviarPedidoPendiente(clienteNombre)
+                                navigator.push(HistorialScreen(ventasViewModel, clienteNombre))
                             },
                             enabled = ventasState.carrito.isNotEmpty()
                         ) {
-                            Text("Listo ->", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("Hacer Pedido", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -95,28 +90,22 @@ class VentasScreen(
                     val productosDisponibles = productosState.productos.filter { it.stock > 0 }
 
                     items(productosDisponibles) { producto ->
+                        val itemEnCarrito = ventasState.carrito.find { it.productoId == producto.id }
+                        val cantidadEnCarrito = itemEnCarrito?.cantidad ?: 0L
+
                         ProductoVentaItem(
                             producto = producto,
-                            onClickAgregar = { productoAAgregar = producto }
+                            cantidadEnCarrito = cantidadEnCarrito,
+                            onIncrementar = {
+                                ventasViewModel.agregarAlCarrito(producto.id, 1L, producto.precio)
+                            },
+                            onDecrementar = {
+                                ventasViewModel.agregarAlCarrito(producto.id, -1L, producto.precio)
+                            }
                         )
                     }
                 }
             }
-        }
-
-        productoAAgregar?.let { producto ->
-            DialogoAñadirAlCarrito(
-                producto = producto,
-                onDismiss = { productoAAgregar = null },
-                onConfirm = { cantidadSeleccionada ->
-                    ventasViewModel.agregarAlCarrito(
-                        productoId = producto.id,
-                        cantidad = cantidadSeleccionada,
-                        precio = producto.precio
-                    )
-                    productoAAgregar = null
-                }
-            )
         }
     }
 }
@@ -124,7 +113,9 @@ class VentasScreen(
 @Composable
 fun ProductoVentaItem(
     producto: Producto,
-    onClickAgregar: () -> Unit
+    cantidadEnCarrito: Long,
+    onIncrementar: () -> Unit,
+    onDecrementar: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -142,71 +133,34 @@ fun ProductoVentaItem(
                 Text(text = "$${producto.precio}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
             }
 
-            Button(onClick = onClickAgregar) {
-                Text("Añadir")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onDecrementar,
+                    enabled = cantidadEnCarrito > 0,
+                    modifier = Modifier.size(36.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Text(
+                    text = "$cantidadEnCarrito",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                OutlinedButton(
+                    onClick = onIncrementar,
+                    enabled = cantidadEnCarrito < producto.stock,
+                    modifier = Modifier.size(36.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Text("+", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
-}
-
-@Composable
-fun DialogoAñadirAlCarrito(
-    producto: Producto,
-    onDismiss: () -> Unit,
-    onConfirm: (Long) -> Unit
-) {
-    var cantidad by remember { mutableStateOf(1L) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Añadir ${producto.nombre}") },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("¿Cuántas unidades deseas agregar al carrito?")
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { if (cantidad > 1) cantidad-- },
-                        modifier = Modifier.size(48.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    }
-
-                    Text(text = "$cantidad", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-
-                    OutlinedButton(
-                        onClick = { if (cantidad < producto.stock) cantidad++ },
-                        modifier = Modifier.size(48.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                if (cantidad == producto.stock) {
-                    Text(
-                        text = "Stock máximo alcanzado",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = { onConfirm(cantidad) }) {
-                Text("Confirmar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
 }

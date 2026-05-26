@@ -8,44 +8,62 @@ import com.example.cafeteria.Domain.util.Resource
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+data class PedidoEnMemoria(
+    val id: Long = System.currentTimeMillis(),
+    val clienteNombre: String,
+    val items: List<DetalleVenta>,
+    val total: Double,
+    val estado: String = "Pendiente"
+)
+
 class VentasViewModel(private val repository: VentasRepository) : ViewModel() {
 
     private val _state = MutableStateFlow(VentasUiState())
     val state = _state.asStateFlow()
 
+    // 2. NUESTRA CAJITA DEL HISTORIAL (¡El truco de magia!)
+    private val _historial = MutableStateFlow<List<PedidoEnMemoria>>(emptyList())
+    val historial = _historial.asStateFlow()
+
     fun agregarAlCarrito(productoId: Long, cantidad: Long, precio: Double) {
-        val nuevoDetalle = DetalleVenta(productoId, cantidad, precio)
-        _state.update {
-            val nuevoCarrito = it.carrito + nuevoDetalle
-            it.copy(
-                carrito = nuevoCarrito,
-                totalCarrito = nuevoCarrito.sumOf { d -> d.cantidad * d.precioUnitario }
+        _state.update { estadoActual ->
+            val carritoActual = estadoActual.carrito.toMutableList()
+            val index = carritoActual.indexOfFirst { it.productoId == productoId }
+
+            if (index != -1) {
+                val itemExistente = carritoActual[index]
+                val nuevaCantidad = itemExistente.cantidad + cantidad
+                if (nuevaCantidad > 0) carritoActual[index] = itemExistente.copy(cantidad = nuevaCantidad)
+                else carritoActual.removeAt(index)
+            } else {
+                if (cantidad > 0) carritoActual.add(DetalleVenta(productoId, cantidad, precio))
+            }
+
+            estadoActual.copy(
+                carrito = carritoActual,
+                totalCarrito = carritoActual.sumOf { it.cantidad * it.precioUnitario }
             )
         }
     }
 
-    fun cobrar(clienteId: Long, vendedorId: Long) {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-            val res = repository.registrarVenta(clienteId, vendedorId, _state.value.carrito)
-            when (res) {
-                is Resource.Success -> _state.update { it.copy(isLoading = false, ventaExitosa = true, carrito = emptyList(), totalCarrito = 0.0) }
-                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-                else -> Unit
-            }
-        }
+    fun enviarPedidoPendiente(clienteNombre: String) {
+        val carritoActual = _state.value.carrito
+        if (carritoActual.isEmpty()) return
+
+        val nuevoPedido = PedidoEnMemoria(
+            clienteNombre = clienteNombre,
+            items = carritoActual,
+            total = _state.value.totalCarrito
+        )
+
+        _historial.update { it + nuevoPedido }
+        _state.update { it.copy(carrito = emptyList(), totalCarrito = 0.0) }
     }
 
-    fun cargarReporte(inicio: String, fin: String) {
-        viewModelScope.launch {
-            repository.obtenerVentasPorFecha(inicio, fin).collect { res ->
-                if (res is Resource.Success) _state.update { it.copy(ventasReporte = res.data) }
-            }
+    fun aceptarPedidoMock(pedidoId: Long) {
+        _historial.update { lista ->
+            lista.map { if (it.id == pedidoId) it.copy(estado = "Aceptado") else it }
         }
-    }
-
-    fun generarQrTicket(ventaId: Long): String {
-        return "ID_VENTA:$ventaId|TOTAL:${_state.value.totalCarrito}|FECHA_SISTEMA"
     }
 
     fun limpiarEstado() = _state.update { it.copy(error = null, ventaExitosa = false) }

@@ -1,38 +1,39 @@
 package com.example.cafeteria
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
 
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
-import cafeteria.shared.generated.resources.Res
-import cafeteria.shared.generated.resources.compose_multiplatform
 import com.example.cafeteria.dih.AppModule
 import com.example.cafeteria.ui.ProductosScreen
 import com.example.cafeteria.ui.VentasScreen
-
-
-//Si quieres que sea la pantalla inicial de la app
-import androidx.compose.ui.unit.dp
 import com.example.cafeteria.Puente.auth.screens_dani.LoginScreen
-import com.example.cafeteria.dih.AppModule
+import com.example.cafeteria.ui.MenuPrincipalScreen
+import com.example.cafeteria.Puente.Productos.ProductosViewModel
+import com.example.cafeteria.Puente.ventas.VentasViewModel
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
         val loginViewModel = remember { AppModule.proveerLoginViewModel() }
-
+        val productosViewModel = remember { AppModule.proveerProductosViewModel() }
+        val ventasViewModel = remember { AppModule.proveerVentasViewModel() }
         var usuarioLogueado by remember { mutableStateOf<String?>(null) }
 
         Surface(
@@ -47,35 +48,46 @@ fun App() {
                     }
                 )
             } else {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "¡Bienvenido, $usuarioLogueado!",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    Text("Aquí irá tu pantalla de Visualización de Orden.")
+                Column(modifier = Modifier.fillMaxSize()) {
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = {
+                            usuarioLogueado = null
+                        }) {
+                            Text("Cerrar Sesión de $usuarioLogueado", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        val esAdmin = usuarioLogueado.equals("Admin", ignoreCase = true)
+
+                        if (esAdmin) {
+                            Navigator(
+                                screen = MenuPrincipalScreen(
+                                    productosViewModel = productosViewModel,
+                                    ventasViewModel = ventasViewModel,
+                                    esAdmin = true
+                                )
+                            ) { navigator ->
+                                SlideTransition(navigator)
+                            }
+                        } else {
+                            Navigator(
+                                screen = VentasScreen(
+                                    productosViewModel = productosViewModel,
+                                    ventasViewModel = ventasViewModel,
+                                    clienteNombre = usuarioLogueado ?: "Cliente"
+                                )
+                            ) { navigator ->
+                                SlideTransition(navigator)
+                            }
+                        }
+                    }
                 }
             }
-        val productosViewModel = remember { AppModule.AppModule.proveerProductosViewModel() }
-        val ventasViewModel = remember { AppModule.AppModule.proveerVentasViewModel() }
-
-        // 1 = Pantalla de Productos (Inventario)
-        // 2 = Pantalla de Ventas (Punto de Venta)
-        val seleccion = 1
-
-        // Determinamos qué objeto Screen instanciar según tu selección
-        val pantallaInicial = when (seleccion) {
-            1 -> ProductosScreen(viewModel = productosViewModel)
-            2 -> VentasScreen(productosViewModel = productosViewModel, ventasViewModel = ventasViewModel)
-            else -> ProductosScreen(viewModel = productosViewModel) // Respaldo por defecto
-        }
-
-        // Cargamos Voyager pasándole la pantalla elegida dinámicamente
-        Navigator(screen = pantallaInicial) { navigator ->
-            SlideTransition(navigator)
         }
     }
 }

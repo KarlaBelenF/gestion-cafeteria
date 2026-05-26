@@ -74,3 +74,15 @@ SELECT * FROM Vendedor WHERE usuario = ? AND contrasena = ?;
 
 actualizarCantidadStock:
 UPDATE Stock SET cantidad = ? WHERE id = ?;
+
+insertVendedor:
+INSERT INTO Vendedor (nombre, usuario, contrasena)
+VALUES (?, ?, ?);
+
+insertProveedor:
+INSERT INTO Proveedor (nombre, usuario, contrasena)
+VALUES (?, ?, ?);
+
+insertCliente:
+INSERT INTO Cliente (nombre, usuario, contrasena)
+VALUES (?, ?, ?);
