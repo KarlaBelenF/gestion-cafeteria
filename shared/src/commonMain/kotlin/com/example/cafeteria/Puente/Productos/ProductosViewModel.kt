@@ -53,7 +53,7 @@ class ProductosViewModel(
         viewModelScope.launch {
             val res = repository.actualizarStock(id, nuevaCantidad)
             if (res is Resource.Success) {
-                cargarProductos() // Recarga la lista para que la pantalla se actualice
+                cargarProductos()
             }
         }
     }
@@ -68,13 +68,21 @@ class ProductosViewModel(
                 categoria = categoria
             )
 
-            // Pasamos 1L como ID temporal de proveedor y vendedor para cumplir
-            // con las reglas de tu tabla Stock. Más adelante esto vendrá del Login.
             val res = repository.insertarProducto(nuevoProducto, proveedorId = 1L, vendedorId = 1L)
 
             if (res is Resource.Success) {
-                cargarProductos() // Recargamos la lista para que el producto aparezca de inmediato
+                cargarProductos()
             }
+        }
+    }
+
+    fun reducirInventario(productoId: Long, cantidadComprada: Long) {
+        // 1. Buscamos el producto actual en la lista que tenemos cargada
+        val producto = _state.value.productos.find { it.id == productoId }
+
+        if (producto != null) {
+            val nuevoStock = (producto.stock - cantidadComprada).coerceAtLeast(0)
+            actualizarStock(productoId, nuevoStock)
         }
     }
 }

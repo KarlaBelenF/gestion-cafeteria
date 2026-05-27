@@ -39,6 +39,7 @@ kotlin {
 
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.transitions)
+            implementation("com.google.zxing:core:3.5.3")
         }
         jvmMain.dependencies {
             implementation("app.cash.sqldelight:sqlite-driver:2.0.2")

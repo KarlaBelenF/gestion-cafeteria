@@ -53,13 +53,39 @@ class HistorialScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     if (pedido.estado == "Pendiente") {
-                                        Text("⏳ Estado: Preparando... Espera a que caja lo acepte.", color = MaterialTheme.colorScheme.secondary)
+                                        Text("Estado: Preparando... Espera a que caja lo acepte.", color = MaterialTheme.colorScheme.secondary)
                                     } else {
-                                        Text("✅ Estado: ¡Aceptado!", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        // AQUÍ SIMULAMOS EL QR DE TU COMPAÑERO
-                                        Text("🎫 Tu código QR es:", fontWeight = FontWeight.Bold)
-                                        Text("[ QR_MOCK_ID:${pedido.id}_TOTAL:${pedido.total} ]", fontSize = 12.sp)
+                                        Text("Estado: ¡Aceptado!", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth().padding(4.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant,
+                                            shape = MaterialTheme.shapes.medium
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(16.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text("TICKET DE COMPRA", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+
+                                                Spacer(modifier = Modifier.height(8.dp))
+
+                                                val contenidoQr = ventasViewModel.generarQrTicket(pedido.id, pedido.total)
+
+                                                CodigoQrReal(
+                                                    contenido = contenidoQr,
+                                                    modifier = Modifier
+                                                        .padding(8.dp)
+                                                        .size(150.dp)
+                                                )
+
+
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Text("¡Gracias por tu preferencia!", style = MaterialTheme.typography.labelSmall)
+                                            }
+                                        }
                                     }
                                 }
                             }

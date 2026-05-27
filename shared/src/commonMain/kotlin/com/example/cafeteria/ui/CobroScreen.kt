@@ -64,7 +64,16 @@ class CobroScreen(
                                     }
 
                                     Button(onClick = {
+                                        // 1. Cambiamos el estado a "Aceptado" para que al cliente le salga su QR
                                         ventasViewModel.aceptarPedidoMock(pedido.id)
+
+                                        // 2. Le avisamos a la base de datos que descuente el inventario real
+                                        pedido.items.forEach { articulo ->
+                                            // 👇 AQUÍ: Tienes que usar la función que tu equipo haya programado
+                                            // en ProductosViewModel para actualizar el stock.
+                                            // Si la llamaron diferente, solo cámbiale el nombre.
+                                            productosViewModel.reducirInventario(articulo.productoId, articulo.cantidad)
+                                        }
                                     }) {
                                         Text("Aceptar Venta")
                                     }

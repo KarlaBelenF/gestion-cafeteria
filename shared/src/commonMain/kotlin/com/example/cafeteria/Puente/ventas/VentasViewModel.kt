@@ -21,7 +21,6 @@ class VentasViewModel(private val repository: VentasRepository) : ViewModel() {
     private val _state = MutableStateFlow(VentasUiState())
     val state = _state.asStateFlow()
 
-    // 2. NUESTRA CAJITA DEL HISTORIAL (¡El truco de magia!)
     private val _historial = MutableStateFlow<List<PedidoEnMemoria>>(emptyList())
     val historial = _historial.asStateFlow()
 
@@ -64,6 +63,18 @@ class VentasViewModel(private val repository: VentasRepository) : ViewModel() {
         _historial.update { lista ->
             lista.map { if (it.id == pedidoId) it.copy(estado = "Aceptado") else it }
         }
+    }
+
+    fun generarQrTicket(ventaId: Long, totalPedido: Double): String {
+        return """
+        CAFETERÍA ITSUR 
+        -----------------------------
+        Orden: #$ventaId
+        Total: $$totalPedido
+        Estado: PAGADO
+        -----------------------------
+        ¡Gracias por tu preferencia!
+    """.trimIndent()
     }
 
     fun limpiarEstado() = _state.update { it.copy(error = null, ventaExitosa = false) }
